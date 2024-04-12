@@ -8,11 +8,15 @@ output: html_document
 # Hello Tony! Welcome to my data replication project
 ## Today, I will be replicating some figures from the nature article:
 # Social trauma engages lateral septum circuitry to occlude social reward
-## Before we began, it's important for me to be honest...
-## Most neuroscienist or pharmacologist do not give out well made data.frames for R, in fact, the ones from this paper gave the data for all figure parts on an excel sheet and color coordinated them
-## This is not ideal for data wrangling, so I manually remade the excel sheet so it would be readable for R, I wanted to address that first and I'll show you why I do so in the prelude below
 
-### Also, since it is just numbers in excel I am not able to determine if the data.frame I am building has the same values for the same animals, like between figure 1b and 1c, therefore, I will not be doing Figure 1e + f + j + k, the way the data is just doesn't give me a good grasp of the data groups
+## Summary: To find potential therapeutic targets for those who suffer from PTSD, the Russo lab at Mount Sinai have detected differences in a specific type of cell in the brain region known as the habenula. These neurons produce a neuropeptide known as neurotension in the lateral region of the habenula. They noticed in their mice that certain groups who avoided social interaction had more responsive neurotension producing neurons, indicating a potential link. Here, they show differences in these groups which they have categorized as suspectable to social stress, resistant to social stress, or they did not experience social stress. They determined this with a model of chronic social defeat where mice were subjected to stressful social events. Their work found that these groups showed robust differences from one another and showed differences in neurotension neuron activity in the habenula which when manipulated, altered susceptable mice's preference towards more social behaviors.
+
+
+## Before we began, it's important for me to be honest...
+## Most neuroscientist or pharmacologist do not give out well made data.frames for R, in fact, the ones from this paper gave the data for all figure parts on an excel sheet and color coordinated them
+## This is not ideal for data wrangling, so I manually remade the excel sheet so it would be readable for R, I wanted to address that first 
+
+### Also, since it is just numbers in excel I am not able to determine if the data.frame I am building has the same values for the same animals, like between figure 1b and 1c, therefore, I will not be doing Figure 1e + f + j + k due to the struture being a potential nightmare to determine which mice are which. I could make assumptions but that is not scientific
 
 ```{r}
 library(tidyverse)
@@ -25,114 +29,156 @@ d <- read.csv("https://raw.githubusercontent.com/nickmrussell/Russell-Data-Analy
 head(d)
 skim(d)
 ```
+### They do not do descriptive statistics directly in the paper, so here is their means and sd's. I don't break it down by sex here but we will in the figures
 
-# Figure 1b, c, & d
-## Showing a decrease in social activity after female mice experience long-term social stress in the form of social defeat
-![alt text here](path-to-image-here)
-```{r}
+
+# Figure 1 shows a decrease in social activity in susceptable (meaning that their neuronal physiology in the population stated above is altered) male and female mice experience long-term social stress in the form of social defeat
+
+# Figure 1b: Decrease in social interaction between a mouse and an object found in susceptable mice
+```{r, out.width="50%"}
 # Filtering the data for only the ladies
 f <- d %>% filter(sex == "F")
 # Figure 1b, social interaction ratio by group via one-way ANOVA
 a1 <- aov(data = f, SI.Ratio ~ as.factor(Treatment))
-summary(a1)
-# Followed by a Tukey multiple-comparisions test
-TukeyHSD(a1)
-se1 <- sd(f$SI.Ratio)/sqrt(count(f))
 
 g <- ggplot(f, aes(x = SI.Ratio, y = as.factor(Treatment), fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary", show.legend = FALSE) 
 g <- g + scale_fill_manual(values = c("darkgrey", "red", "lightgrey")) 
-g <- g + theme_classic() + geom_point() + xlim(0, 2.5) + theme(axis.title.y=element_blank(), legend.position = "none")
+g <- g + theme_classic() + geom_point() + xlim(0, 2.5) + theme(axis.title.y=element_blank(), legend.position = "none") + scale_x_continuous(expand = c(0,0), limits = c(0,2.5))
+summary(a1)
+TukeyHSD(a1)
 print(g)
 
 ```
-![an image caption Source:fig_1b](data_rep/fig_1b)
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1b.png?raw=true")
+```
 
-## There seems to be more spread in the figure 1b graph than in the publication, I am unsure as to why, it could be due to the differences in how I set my x axis max or just aesthetic choices
+### After running the ANOVA, the F-statistic lines up with the paper exactly! (F(2, 31) = 53.96) and the paper just stated it was a very significant p value (p < 0.0001) (which is Dr. Russo flexing on me and the rest of the social stress community) which matches with the extremely low p-value we found above. 
+### The post hoc analysis also shows significance of p < 0.0001 in RES vs. SUS and CTRL vs. SUS which matches what is found in the paper.
+### There seems to be more spread in the figure 1b graph than in the publication, I am unsure as to why, it could be due to the differences in GraphPag and ggplot but that additional variation is interesting and will be reccouring so keep an eye out. 
 
 
-
-```{r}
+# Figure 1c: Female mice that are susceptable to social stress spend less time investigating the novel mouse
+```{r, out.width="40%"}
 # Fig. 1c: amount of time in seconds spent socially investigating
 a2 <- aov(data = f, Social_Investigation ~ as.factor(Treatment))
-summary(a2)
 # Followed by a Tukey multiple-comparisions test
-TukeyHSD(a2)
-se2 <- sd(f$Social_Investigation)/sqrt(count(f))
+
 
 g <- ggplot(f, aes(x = as.factor(Treatment), y = Social_Investigation, fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary", show.legend = FALSE) 
 g <- g + scale_fill_manual(values = c("lightgrey", "red", "darkgrey")) 
 g <- g + theme_classic() +  geom_point() + theme(axis.title.x=element_blank(), legend.position = "none") + labs( y = "Social Investigation (s)") + ylim(0, 200) + scale_y_continuous(expand = c(0,0), limits = c(0,200))
+summary(a2)
+TukeyHSD(a2)
 print(g)
 
 ```
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1c.png?raw=true")
+```
 
-```{r}
+### The F statistic and p-value was still identical to the paper: f-stat = 6.755 and p-value = 0.00367.
+### For Post-hoc, they provide just astricks to represent significance in the figure. It matches up with what is provided my version: 
+### SUS vs. CRTL: p = 0.043, SUS vs. RES: p = 0.003.
+### This is actually impressive how identical it is so far.
+
+# Figure 1d: Amount of social avoidance each group of female mice had
+```{r, out.width="40%"}
 # Fig. 1d: still female data, but its the count of times the mouse socially avoided the novel mouse
 a3 <- aov(data = f, Social_Avoidance ~ as.factor(Treatment))
-summary(a3)
+
 # Followed by a Tukey multiple-comparisions test
-TukeyHSD(a3)
 g <- ggplot(f, aes(x = as.factor(Treatment), y = Social_Avoidance, fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary", show.legend = FALSE) 
 g <- g + scale_fill_manual(values = c("lightgrey", "red", "darkgrey")) 
 g <- g + theme_classic() +  geom_point() + theme(axis.title.x=element_blank(), legend.position = "none") + labs( y = "Social Avoidance (count)") + ylim(0, 10) + scale_y_continuous(expand = c(0,0), limits = c(0,10))
+summary(a3)
+TukeyHSD(a3)
 print(g)
 ```
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1d.png?raw=true")
+```
 
+### Again, really similar f-stat = 33.13 and p-value = 0.00367
+### And post-hoc matches with significances between all the groups, suprisingly indicating that the resistant group has a higher level of resistance compared to the control group despite the other metrics not indicating this difference.
 
 # Figure 1g, h, & i
 ## Time for the male mice!
-```{r}
+
+# Figure 1g: The social interaction ratio in male mice, similar to Fig. 1b
+```{r, out.width="40%"}
 # Filtering for the fellas
 m <- d %>% filter(sex == "M")
 # Figure 1b, social interaction ratio by group via one-way ANOVA
 a4 <- aov(data = m, SI.Ratio ~ as.factor(Treatment))
-summary(a4)
-
-# Followed by a Tukey multiple-comparisions test
-TukeyHSD(a4)
-
 g <- ggplot(m, aes(x = SI.Ratio, y = as.factor(Treatment), fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary") 
 g <- g + scale_fill_manual(values = c("darkgrey", "red", "lightgrey")) 
-g <- g + theme_classic() +  geom_point() + xlim(0, 4) + theme(axis.title.y=element_blank(), legend.position = "none")
+g <- g + theme_classic() +  geom_point() + xlim(0, 4) + theme(axis.title.y=element_blank(), legend.position = "none") + scale_x_continuous(expand = c(0,0), limits = c(0,4))
+summary(a4)
+TukeyHSD(a4)
 print(g)
 
 ```
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1g.png?raw=true")
+```
+### So now we start to see the male data
+### The F-stastic is the same (F-stat (2, 46) = 24.36) and the p value is still the same amount of significant:p < 0.0001.
+### The posthoc astricks actually dampen the signficant differences with them both being the same but it is acutally:
+### SUS vs. CRTL: p = 0.00046, SUS vs. RES: p = 0.0000001.
 
-```{r}
-# Fig. 1c: amount of time in seconds spent socially investigating
+# Figure 1g: The social interaction in seconds 
+```{r, out.width="40%"}
+# Fig. 1h: amount of time in seconds spent socially investigating
 a5 <- aov(data = m, Social_Investigation ~ as.factor(Treatment))
-summary(a5)
+
 # Followed by a Tukey multiple-comparisions test
-TukeyHSD(a5)
+
 
 g <- ggplot(m, aes(x = as.factor(Treatment), y = Social_Investigation, fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary") 
 g <- g + scale_fill_manual(values = c("lightgrey", "red", "darkgrey")) 
 g <- g + theme_classic() +  geom_point() + theme(axis.title.x=element_blank(), legend.position = "none") + labs( y = "Social Investigation (s)") + ylim(0, 300) + scale_y_continuous(expand = c(0,0), limits = c(0,300))
+summary(a5)
+TukeyHSD(a5)
 print(g)
 ```
-```{r}
-# Fig. 1d: count of times the mouse socially avoided the novel mouse
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1h.png?raw=true")
+```
+### The values again line up with F-stastic as 14.82 and the p value is still significant:p < 0.0001 for both.
+### I will note that it would be interesting to compare sexes due to the differences in sample size, meaning they would need to do a nonparametic test, or at least account for the variation in a model.
+
+# Figure 1g: The number of social avoidances in male mice by group
+```{r, out.width="40%"}
+# Fig. 1i: count of times the mouse socially avoided the novel mouse
 a6 <- aov(data = m, Social_Avoidance ~ as.factor(Treatment))
-summary(a6)
 # Followed by a Tukey multiple-comparisions test
-TukeyHSD(a6)
+
 g <- ggplot(m, aes(x = as.factor(Treatment), y = Social_Avoidance, fill = as.factor(Treatment)))
 g <- g +  geom_bar(stat = "summary") 
 g <- g + scale_fill_manual(values = c("lightgrey", "red", "darkgrey")) 
 g <- g + theme_classic() +  geom_point() + theme(axis.title.x=element_blank(), legend.position = "none") + labs( y = "Social Avoidance (count)") + ylim(0, 40) + scale_y_continuous(expand = c(0,0), limits = c(0,40))
+summary(a6)
+TukeyHSD(a6)
 print(g)
 ```
+```{r echo=FALSE, out.width="40%"}
+knitr::include_graphics("https://github.com/nickmrussell/Russell-Data-Analysis-Replication/blob/master/fig_1i.png?raw=true")
+```
+### Really getting repetitive, but again they lined up here with an F stat of 15.37 and a p-value < 0.0001.
+### Their posthocs were again significant in both my model and the paper for RES vs. SUS and CTRL vs SUS
 
-
+## They really are hammering in how differences in neural circuitry really impacts social behavior, which is good because measuring physiology directly can become more messy and a more difficult analysis. It is important to note these mice were later divided into these groups which could provide some bias and they should follow this up with different genetic variations of these mice targeting the neurotension neurons.
 
 ## Hopefully you found that interesting because most of the field just does ANOVAs and t-tests, I was orignally planning on running some of the linear regressions and two-way ANOVAs in this paper, but this week has been hectic, here is what I currently happenening as I write this:
-### -My Experiments have started a couple weeks ago and I am working everyday until I fly home in late May
+### -My Experiments have started a couple weeks ago and I am working everyday until I fly home in late May then coming back a week later to continue until August for a conference (and then again... which is normal for students but it is taxing)
 ### -I have two poster presentations, one the day after this was originally due and another Monday
 ### -I am neck deep in grant writing
 ### -My cat is currently undergoing exams for surgery for Friday
-### While there are better ways for me to manage everything and reach out, I have been swamped and I have at least done above the bare minimum. I
+### -I'm still working in tandem on a journal club presentation that is also friday (on another social stress paper)
+### While there are better ways for me to manage everything and reach out, I have been swamped and I have at least done above the bare minimum. I did enjoy this assignment and found it to be helpful in transparency with data. I will have to start uploading all my data as per NIH's new standards soon and I will make sure to make my data.frames readable to those who use R or any coding language
